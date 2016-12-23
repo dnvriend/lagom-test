@@ -1,5 +1,5 @@
 # lagom-test
-A small study project on [Lagom]()
+A small study project on [Lagom Scala](http://www.lagomframework.com/documentation/1.3.x/java/Home.html).
 
 ## Introduction
 Lagom is a framework for creating microservice-based systems. It provides a [Service API](http://www.lagomframework.com/documentation/1.3.x/scala/ServiceDescriptors.html) 
@@ -34,3 +34,5 @@ as a database out-of-the-box.
 
 ## Video
 - [Lightbend Lagom: Microservices Just Right - by Mirco Dotta](https://www.youtube.com/watch?v=fRlx_fxar-U)
+
+Have fun!

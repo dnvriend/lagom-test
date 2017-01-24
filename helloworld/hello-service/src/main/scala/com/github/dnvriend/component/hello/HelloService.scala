@@ -23,7 +23,7 @@ import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.{ ServiceCall, ServiceLocator }
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 
 class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends HelloApi {
 
@@ -41,21 +41,21 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
   serviceLocator.locate("hello-api").map(handleMaybeUri).recover { case t: Throwable => t.printStackTrace() }
   //  A service call for an entity. A service call has a request and a response entity.
   override def sayHelloWithName(userName: String): ServiceCall[NotUsed, String] =
-    ServiceCall(_ => Future.successful(s"Hello $userName!"))
+    ServiceCall(_ => s"Hello $userName!")
 
   override def sayHelloWithNameAndAge(userName: String, age: Int): ServiceCall[NotUsed, String] =
-    ServiceCall(_ => Future.successful(s"Hello $userName, you are $age old."))
+    ServiceCall(_ => s"Hello $userName, you are $age old.")
 
   override def sayHelloWithNameAndAgeAndPageNoAndPageSize(userName: String, age: Int, pageNo: Long, pageSize: Int): ServiceCall[NotUsed, String] =
-    ServiceCall(_ => Future.successful(s"Hello $userName, you are $age old, pageNo=$pageNo and pageSize=$pageSize"))
+    ServiceCall(_ => s"Hello $userName, you are $age old, pageNo=$pageNo and pageSize=$pageSize")
 
   // A ServiceCall is an abstraction of a service call for an entity.
   override def sayHello: ServiceCall[NotUsed, String] =
-    ServiceCall(_ => Future.successful("Hello World!"))
+    ServiceCall(_ => "Hello World!")
 
   override def addItem(orderId: Long): ServiceCall[Item, NotUsed] =
     ServiceCall { item =>
       println(s"Adding item: $item")
-      Future.successful(NotUsed)
+      NotUsed
     }
 }

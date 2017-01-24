@@ -18,6 +18,7 @@ package com.github.dnvriend
 
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
+import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 
 class HelloWorldApplicationLoader extends LagomApplicationLoader {
   override def loadDevMode(context: LagomApplicationContext) =

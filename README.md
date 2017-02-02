@@ -259,6 +259,7 @@ see: http://www.lagomframework.com/documentation/1.3.x/scala/ConductR.html
 - [(1'00 hr) Managing Microservices in Production with Lagom - Chrisopher Hunt](https://www.youtube.com/watch?v=PT4H70SNyUo)
 - [(0'48 hr) Lagom in Practice - Yannick De Turck](https://www.youtube.com/watch?v=JOGlZzY6ycI)
 - [(0'44 hr) Taking the friction out of microservice frameworks with Lagom - Markus Eisele](https://www.youtube.com/watch?v=7LSpgem2VZc)
+- [(0'53 hr) Lightbend Lagom: Microservices “Just Right" - Brendan McAdams](https://www.youtube.com/watch?v=nMcSQM4N56Y)
 
 ## Lagom Scala Release History
 

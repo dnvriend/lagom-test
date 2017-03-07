@@ -20,10 +20,11 @@ import java.net.URI
 import javax.inject.Inject
 
 import akka.NotUsed
-import auth.{ Auth, AuthRepository, BasicAuth, LoggingServiceCall }
+import auth._
 import com.lightbend.lagom.scaladsl.api.{ ServiceCall, ServiceLocator }
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext
 
@@ -35,6 +36,11 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
        |EntityRegistry: $entityRegistry
      """.stripMargin
   )
+
+  val authRepo = new AuthRepository {
+    override def getAuth(name: String): Option[Auth] =
+      Option(name).find(_ == "foo").map(_ => Auth("foo", "bar"))
+  }
 
   def handleMaybeUri(maybeUri: Option[URI]): Unit = maybeUri match {
     case Some(uri) => println("Got uri: " + uri)
@@ -52,16 +58,20 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
     ServiceCall(_ => s"Hello $userName, you are $age old, pageNo=$pageNo and pageSize=$pageSize")
 
   // A ServiceCall is an abstraction of a service call for an entity.
-  override def sayHello: ServiceCall[NotUsed, String] =
+  override def sayHello: ServiceCall[NotUsed, String] = {
     LoggingServiceCall.logged(ServerServiceCall(_ => "Hello World!"))
+  }
 
   override def sayHelloAuth: ServiceCall[NotUsed, String] = {
-    val authRepo = new AuthRepository {
-      override def getAuth(name: String): Option[Auth] =
-        Option(name).find(_ == "foo").map(_ => Auth("foo", "bar"))
-    }
+    AuthenticationServiceCall.basic(authRepo)(auth => ServerServiceCall(_ => s"Hello World! $auth"))
+  }
 
-    BasicAuth.auth(authRepo)(auth => ServerServiceCall(_ => s"Hello World! $auth"))
+  override def sayHelloAuthJwt: ServiceCall[NotUsed, String] = {
+    AuthenticationServiceCall.jwt(authRepo)(auth => ServerServiceCall(_ => s"Hello World! $auth"))
+  }
+
+  override def createToken: ServiceCall[Credentials, String] = ServiceCall { creds =>
+    AuthenticationServiceCall.createToken(Json.toJson(creds).toString)
   }
 
   override def addItem(orderId: Long): ServiceCall[Item, NotUsed] =

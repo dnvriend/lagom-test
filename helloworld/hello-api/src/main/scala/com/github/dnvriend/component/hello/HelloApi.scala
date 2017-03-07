@@ -27,6 +27,11 @@ object Item {
 }
 final case class Item(name: String)
 
+case class Credentials(user: String, password: String)
+object Credentials {
+  implicit val format: Format[Credentials] = Json.format
+}
+
 // http://www.lagomframework.com/documentation/1.3.x/scala/ServiceDescriptors.html
 //
 // The HelloApi (which is-a Service) mixes in a DSL for describing a (Lagom) Service.
@@ -49,10 +54,12 @@ trait HelloApi extends Service {
   //
   def sayHello: ServiceCall[NotUsed, String]
   def sayHelloAuth: ServiceCall[NotUsed, String]
+  def sayHelloAuthJwt: ServiceCall[NotUsed, String]
   def sayHelloWithName(userName: String): ServiceCall[NotUsed, String]
   def sayHelloWithNameAndAge(userName: String, age: Int): ServiceCall[NotUsed, String]
   def sayHelloWithNameAndAgeAndPageNoAndPageSize(userName: String, age: Int, pageNo: Long, pageSize: Int): ServiceCall[NotUsed, String]
   def addItem(orderId: Long): ServiceCall[Item, NotUsed]
+  def createToken: ServiceCall[Credentials, String]
 
   // While the 'sayHello' method describes how the call will be programmatically invoked or implemented,
   // it does not describe how this call gets mapped down onto the transport.
@@ -132,6 +139,10 @@ trait HelloApi extends Service {
       namedCall("hello", sayHello),
       // using a customized name here 'helloAuth' and is available at: http --auth foo:bar :9000/helloAuth
       namedCall("helloAuth", sayHelloAuth),
+      // using JWT for authentication available at: http :9000/helloAuthJwt jw_token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZm9vIiwicGFzc3dvcmQiOiJiYXIifQ.36Px3s92nRp0sqZkRwS6nVmHZBRZhsGA0PR8IsEgsnU
+      namedCall("helloAuthJwt", sayHelloAuthJwt),
+      // creating a token available at: http :9000/createToken user=foo password=bar
+      namedCall("createToken", createToken),
 
       // ##
       // ## Path based identifiers

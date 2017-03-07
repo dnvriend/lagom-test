@@ -32,6 +32,7 @@ lazy val helloWorldService = (project in file("hello-service"))
   .enablePlugins(Cinnamon)
   .settings(
     libraryDependencies ++= Seq(
+      "com.jason-goodwin" %% "authentikat-jwt" % "0.4.1",
       lagomScaladslApi,
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,

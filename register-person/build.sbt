@@ -26,7 +26,9 @@ lazy val personApi = (project in file("person-api"))
 
 lazy val personImpl = (project in file("person-impl"))
   .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(LagomConductRPlugin)
   .enablePlugins(LagomScala)
+  .enablePlugins(Cinnamon)
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,

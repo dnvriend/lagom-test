@@ -1,5 +1,5 @@
 // https://bintray.com/lagom/sbt-plugin-releases/lagom-sbt-plugin
-addSbtPlugin("com.lightbend.lagom" % "lagom-sbt-plugin" % "1.3.1")
+addSbtPlugin("com.lightbend.lagom" % "lagom-sbt-plugin" % "1.3.0")
 
 // https://github.com/typesafehub/sbt-conductr
 addSbtPlugin("com.lightbend.conductr" % "sbt-conductr" % "2.3.0")

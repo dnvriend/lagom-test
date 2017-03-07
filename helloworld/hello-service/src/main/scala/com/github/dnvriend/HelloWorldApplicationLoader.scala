@@ -16,16 +16,20 @@
 
 package com.github.dnvriend
 
+import com.github.dnvriend.component.hello.HelloApi
 import com.lightbend.lagom.scaladsl.server._
-import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
+import com.typesafe.conductr.bundlelib.lagom.scaladsl.ConductRApplicationComponents
 
 class HelloWorldApplicationLoader extends LagomApplicationLoader {
+  override def load(context: LagomApplicationContext) =
+    new HelloWorldApplication(context) with ConductRApplicationComponents
+
   override def loadDevMode(context: LagomApplicationContext) =
     new HelloWorldApplication(context) with LagomDevModeComponents
 
-  override def load(context: LagomApplicationContext) =
-    new HelloWorldApplication(context) {
-      override def serviceLocator = ServiceLocator.NoServiceLocator
-    }
+  // to let ConductR discover the Lagom service API
+  override def describeServices = List(
+    readDescriptor[HelloApi]
+  )
 }

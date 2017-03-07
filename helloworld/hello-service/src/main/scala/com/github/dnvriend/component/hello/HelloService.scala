@@ -20,8 +20,10 @@ import java.net.URI
 import javax.inject.Inject
 
 import akka.NotUsed
+import auth.{ Auth, AuthRepository, BasicAuth, LoggingServiceCall }
 import com.lightbend.lagom.scaladsl.api.{ ServiceCall, ServiceLocator }
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
+import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 
 import scala.concurrent.ExecutionContext
 
@@ -36,7 +38,7 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
 
   def handleMaybeUri(maybeUri: Option[URI]): Unit = maybeUri match {
     case Some(uri) => println("Got uri: " + uri)
-    case _ => println("Got no uri")
+    case _         => println("Got no uri")
   }
   serviceLocator.locate("hello-api").map(handleMaybeUri).recover { case t: Throwable => t.printStackTrace() }
   //  A service call for an entity. A service call has a request and a response entity.
@@ -51,7 +53,16 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
 
   // A ServiceCall is an abstraction of a service call for an entity.
   override def sayHello: ServiceCall[NotUsed, String] =
-    ServiceCall(_ => "Hello World!")
+    LoggingServiceCall.logged(ServerServiceCall(_ => "Hello World!"))
+
+  override def sayHelloAuth: ServiceCall[NotUsed, String] = {
+    val authRepo = new AuthRepository {
+      override def getAuth(name: String): Option[Auth] =
+        Option(name).find(_ == "foo").map(_ => Auth("foo", "bar"))
+    }
+
+    BasicAuth.auth(authRepo)(auth => ServerServiceCall(_ => s"Hello World! $auth"))
+  }
 
   override def addItem(orderId: Long): ServiceCall[Item, NotUsed] =
     ServiceCall { item =>

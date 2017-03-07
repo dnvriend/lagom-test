@@ -26,6 +26,16 @@ abstract class HelloWorldApplication(context: LagomApplicationContext) extends L
     with CassandraPersistenceComponents
     with AhcWSComponents {
 
+  def str =
+    s"""
+      |====================================
+      |Configuration: $configuration
+      |context: $context
+      |====================================
+    """.stripMargin
+
+  println(str)
+
   // The service descriptor contains everything Lagom needs to know about how to invoke a service,
   // consequently, Lagom is able to implement service descriptor interface for you.
   //

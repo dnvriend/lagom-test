@@ -35,9 +35,9 @@ object GenericSettings extends AutoPlugin {
     SbtScalariform.autoImport.scalariformPreferences := SbtScalariform.autoImport.scalariformPreferences.value
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
-    .setPreference(DoubleIndentClassDeclaration, true),
+    .setPreference(DoubleIndentClassDeclaration, true)
 
 	// lagom configuration
-	  lagomServiceLocatorPort in ThisBuild := 8000
+//	  lagomServiceLocatorPort in ThisBuild := 8000
   )
 }

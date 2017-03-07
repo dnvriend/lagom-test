@@ -20,10 +20,10 @@ import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api._
 import com.lightbend.lagom.scaladsl.api.Service._
 import com.lightbend.lagom.scaladsl.api.transport.Method
-import play.api.libs.json.Json
+import play.api.libs.json.{ Format, Json }
 
 object Item {
-  implicit val format = Json.format[Item]
+  implicit val format: Format[Item] = Json.format
 }
 final case class Item(name: String)
 
@@ -48,6 +48,7 @@ trait HelloApi extends Service {
   // that is, they will be parsed into memory, eg, using Json.
   //
   def sayHello: ServiceCall[NotUsed, String]
+  def sayHelloAuth: ServiceCall[NotUsed, String]
   def sayHelloWithName(userName: String): ServiceCall[NotUsed, String]
   def sayHelloWithNameAndAge(userName: String, age: Int): ServiceCall[NotUsed, String]
   def sayHelloWithNameAndAgeAndPageNoAndPageSize(userName: String, age: Int, pageNo: Long, pageSize: Int): ServiceCall[NotUsed, String]
@@ -129,6 +130,8 @@ trait HelloApi extends Service {
 
       // using a customized name here 'hello' and is available at: http :9000/hello
       namedCall("hello", sayHello),
+      // using a customized name here 'helloAuth' and is available at: http --auth foo:bar :9000/helloAuth
+      namedCall("helloAuth", sayHelloAuth),
 
       // ##
       // ## Path based identifiers

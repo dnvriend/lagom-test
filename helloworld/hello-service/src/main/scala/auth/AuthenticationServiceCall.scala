@@ -28,7 +28,7 @@ object AuthenticationServiceCall {
    * JSON Web Token (JWT)
    * see: https://blog.knoldus.com/2017/02/14/jwt-authentication-with-play-framework/
    */
-  def jwt[Request, Response](authRepo: AuthRepository)(serviceCall: Auth => ServerServiceCall[Request, Response]) = {
+  def jwt[Request, Response](authRepo: AuthRepository)(serviceCall: Auth => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = {
     def isValidToken(jwtToken: String): Boolean =
       JsonWebToken.validate(jwtToken, JwtSecretKey)
 
@@ -55,7 +55,7 @@ object AuthenticationServiceCall {
   /**
    * Basic Auth (Base64 encoded)
    */
-  def basic[Request, Response](authRepo: AuthRepository)(serviceCall: Auth => ServerServiceCall[Request, Response]) =
+  def basic[Request, Response](authRepo: AuthRepository)(serviceCall: Auth => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] =
     ServerServiceCall.compose { (requestHeader: RequestHeader) =>
       val maybeAuth: Option[Auth] = for {
         authHeader <- requestHeader.getHeader("Authorization")

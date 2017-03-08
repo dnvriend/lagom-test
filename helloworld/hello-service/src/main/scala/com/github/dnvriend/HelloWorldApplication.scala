@@ -16,25 +16,19 @@
 
 package com.github.dnvriend
 
+import akka.pattern.CircuitBreaker
 import com.github.dnvriend.component.hello.{ CallHelloApi, CallHelloService, HelloApi, HelloService }
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
 import com.lightbend.lagom.scaladsl.server._
 import com.softwaremill.macwire._
+import lagom.components.cb.CircuitBreakerComponents
+import lagom.components.kafka.{ DefaultKafkaProducer, KafkaProducer }
 import play.api.libs.ws.ahc.AhcWSComponents
 
 abstract class HelloWorldApplication(context: LagomApplicationContext) extends LagomApplication(context)
     with CassandraPersistenceComponents
+    with CircuitBreakerComponents
     with AhcWSComponents {
-
-  def str =
-    s"""
-      |====================================
-      |Configuration: $configuration
-      |context: $context
-      |====================================
-    """.stripMargin
-
-  println(str)
 
   // The service descriptor contains everything Lagom needs to know about how to invoke a service,
   // consequently, Lagom is able to implement service descriptor interface for you.
@@ -47,6 +41,8 @@ abstract class HelloWorldApplication(context: LagomApplicationContext) extends L
   // client from a Lagom application, you just have to do the following
 
   val helloServiceClient: HelloApi = serviceClient.implement[HelloApi]
+  lazy val cb: CircuitBreaker = wireWith(circuitBreakerProvider _)
+  lazy val kafkaProducer: KafkaProducer = wire[DefaultKafkaProducer]
 
   // Bind the services that this server provides
   override lazy val lagomServer: LagomServer = {

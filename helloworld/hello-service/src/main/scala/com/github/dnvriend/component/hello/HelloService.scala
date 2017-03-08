@@ -21,21 +21,17 @@ import javax.inject.Inject
 
 import akka.NotUsed
 import auth._
+import com.lightbend.lagom.scaladsl.api.transport.{ Forbidden, RequestHeader }
 import com.lightbend.lagom.scaladsl.api.{ ServiceCall, ServiceLocator }
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
+import lagom.components.kafka.KafkaProducer
 import play.api.libs.json.Json
 
+import scala.compat.Platform
 import scala.concurrent.ExecutionContext
 
-class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends HelloApi {
-
-  println(
-    s"""
-       |ServiceRegistry: $serviceLocator
-       |EntityRegistry: $entityRegistry
-     """.stripMargin
-  )
+class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry, producer: KafkaProducer)(implicit ec: ExecutionContext) extends HelloApi {
 
   val authRepo = new AuthRepository {
     override def getAuth(name: String): Option[Auth] =
@@ -72,6 +68,10 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
 
   override def createToken: ServiceCall[Credentials, String] = ServiceCall { creds =>
     AuthenticationServiceCall.createToken(Json.toJson(creds).toString)
+  }
+
+  override def produceMessage(msg: String, key: String): ServiceCall[NotUsed, NotUsed] = ServiceCall { _ =>
+    producer.produceJson("hello", key, Message(msg, Platform.currentTime))
   }
 
   override def addItem(orderId: Long): ServiceCall[Item, NotUsed] =

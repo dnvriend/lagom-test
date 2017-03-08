@@ -22,6 +22,11 @@ import com.lightbend.lagom.scaladsl.api.Service._
 import com.lightbend.lagom.scaladsl.api.transport.Method
 import play.api.libs.json.{ Format, Json }
 
+case class Message(msg: String, time: Long)
+object Message {
+  implicit val format: Format[Message] = Json.format
+}
+
 object Item {
   implicit val format: Format[Item] = Json.format
 }
@@ -60,6 +65,7 @@ trait HelloApi extends Service {
   def sayHelloWithNameAndAgeAndPageNoAndPageSize(userName: String, age: Int, pageNo: Long, pageSize: Int): ServiceCall[NotUsed, String]
   def addItem(orderId: Long): ServiceCall[Item, NotUsed]
   def createToken: ServiceCall[Credentials, String]
+  def produceMessage(msg: String, key: String): ServiceCall[NotUsed, NotUsed]
 
   // While the 'sayHello' method describes how the call will be programmatically invoked or implemented,
   // it does not describe how this call gets mapped down onto the transport.
@@ -171,6 +177,12 @@ trait HelloApi extends Service {
       // available at: 'http :9000/api/hello/foo/42/page pageNo==1 pageSize==3'
       pathCall("/api/hello/:name/:age/page?pageNo&pageSize", sayHelloWithNameAndAgeAndPageNoAndPageSize _),
 
+      // available at 'http :9000/api/produce/foo/123'
+      pathCall("/api/produce/:msg/:key", produceMessage _),
+
+      // ##
+      // ## Rest Call
+      // ##
       // available at: 'http :9000/api/hello-with-name/foo'
       restCall(Method.GET, "/api/hello-with-name/:name", sayHelloWithName _),
       // available at: 'http :9000/api/hello-with-name-and-age/foo/42'

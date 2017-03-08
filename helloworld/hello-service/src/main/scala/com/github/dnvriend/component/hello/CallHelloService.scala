@@ -11,14 +11,6 @@ class CallHelloService @Inject() (hello: HelloApi, config: Configuration)(implic
   override def callHello(username: String): ServiceCall[NotUsed, String] =
     ServiceCall { _ =>
       hello.sayHelloWithName(username).invoke().map { response =>
-        println(
-          s"""
-            |>>>>>>> ====================================================
-            |play.api.Configuration: ${config.underlying}
-            |<<<<<<< ====================================================
-          """.stripMargin
-        )
-
         val msg = s"Hello service said: $response"
         println(msg)
         msg

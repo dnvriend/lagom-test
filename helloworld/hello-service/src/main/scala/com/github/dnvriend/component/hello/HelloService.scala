@@ -19,19 +19,22 @@ package com.github.dnvriend.component.hello
 import java.net.URI
 import javax.inject.Inject
 
-import akka.NotUsed
+import akka.util.Timeout
+import akka.{ Done, NotUsed }
 import auth._
-import com.lightbend.lagom.scaladsl.api.transport.{ Forbidden, RequestHeader }
+import com.github.dnvriend.component.hello.FooBarEntity._
 import com.lightbend.lagom.scaladsl.api.{ ServiceCall, ServiceLocator }
-import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
+import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
+import com.lightbend.lagom.scaladsl.persistence.{ AggregateEvent, AggregateEventTag, PersistentEntity, PersistentEntityRegistry }
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import lagom.components.kafka.KafkaProducer
-import play.api.libs.json.Json
+import play.api.libs.json.{ Format, Json }
 
 import scala.compat.Platform
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.xml.Elem
 
-class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry, producer: KafkaProducer)(implicit ec: ExecutionContext) extends HelloApi {
+class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry, producer: KafkaProducer)(implicit ec: ExecutionContext, timeout: Timeout) extends HelloApi {
 
   val authRepo = new AuthRepository {
     override def getAuth(name: String): Option[Auth] =
@@ -74,9 +77,127 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
     producer.produceJson("hello", key, Message(msg, Platform.currentTime))
   }
 
+  override def doFooBar(msg: String, key: String): ServiceCall[NotUsed, String] = ServiceCall { _ =>
+    println(s"===> [HelloServiceImpl] - doFooBar($msg, $key)")
+    for {
+      _ <- Future.sequence(List(producer.produceJson("FooBarTopic", key, DoFoo(msg, key)), producer.produceJson("FooBarTopic", key, DoBar(msg, key))))
+      response <- entityRegistry.refFor[FooBarEntity](key).ask(GetStateRequest)
+    } yield response.msg
+  }
+
   override def addItem(orderId: Long): ServiceCall[Item, NotUsed] =
     ServiceCall { item =>
       println(s"Adding item: $item")
       NotUsed
     }
+
+  override def respondWithXml: ServiceCall[NotUsed, Elem] = ServiceCall { _ =>
+    val xml =
+      <people>
+        <person>
+          <name>FooBar</name>
+          <age>42</age>
+        </person>
+      </people>
+    Future.successful(xml)
+  }
+
+  override def postSomeXml: ServiceCall[Elem, Elem] = ServiceCall { entity =>
+    println(s"==> Got: $entity")
+    val xml =
+      <envelope>
+        <message>Hello World!</message>
+      </envelope>
+    Future.successful(xml)
+  }
+}
+
+object FooBarEntity {
+  // the commands
+  trait FooBarCmd[R] extends ReplyType[R]
+  case object GetStateRequest extends FooBarCmd[GetStateResponse]
+  case class GetStateResponse(msg: String)
+  case class HandleFooDone(msg: FooDone) extends FooBarCmd[Done]
+  case class HandleBarDone(msg: BarDone) extends FooBarCmd[Done]
+
+  // the events
+  trait FooBarStateEvent
+  case class FooEventReceived(foo: FooDone) extends FooBarStateEvent with AggregateEvent[FooEventReceived] {
+    override def aggregateTag = AggregateEventTag[FooEventReceived]("all")
+  }
+  object FooEventReceived {
+    implicit val format: Format[FooEventReceived] = Json.format
+  }
+  case class BarEventReceived(foo: BarDone) extends FooBarStateEvent with AggregateEvent[BarEventReceived] {
+    override def aggregateTag = AggregateEventTag[BarEventReceived]("all")
+  }
+  object BarEventReceived {
+    implicit val format: Format[BarEventReceived] = Json.format
+  }
+}
+
+class FooBarEntity extends PersistentEntity {
+  import FooBarEntity._
+  override type Command = FooBarCmd[_]
+  override type Event = FooBarStateEvent
+  override type State = FooBarState
+
+  override def initialState: FooBarState = FooBarState.empty
+
+  override def behavior: Behavior = {
+    case _ => Actions()
+      .onCommand[HandleFooDone, Done] {
+        case (cmd: HandleFooDone, ctx, state) =>
+          val (_, event) = FooBarState.handleCommand(state, cmd)
+          ctx.thenPersist(event) { _ =>
+            println("===> Handling FooDone")
+            ctx.reply(Done)
+          }
+      }.onCommand[HandleBarDone, Done] {
+        case (cmd: HandleBarDone, ctx, state) =>
+          val (_, event) = FooBarState.handleCommand(state, cmd)
+          ctx.thenPersist(event) { _ =>
+            println("===> Handling BarDone")
+            ctx.reply(Done)
+          }
+      }.onEvent {
+        case (event: FooBarStateEvent, state) =>
+          FooBarState.handleEvent(state, event)
+      }.onReadOnlyCommand[GetStateRequest.type, GetStateResponse] {
+        case (GetStateRequest, ctx, state) if state.isComplete =>
+          val response = GetStateResponse(state.msg)
+          println(s"===> Returning state: $response")
+          ctx.reply(response)
+      }
+  }
+}
+
+case class FooBarState(foo: Option[FooDone], bar: Option[BarDone]) {
+  def isComplete: Boolean = foo.isDefined && bar.isDefined
+  def msg: String = s"foo=$foo, bar=$bar"
+}
+
+object FooBarState {
+  val empty = FooBarState(None, None)
+  implicit val format: Format[FooBarState] = Json.format
+
+  def time: Long = Platform.currentTime
+
+  def handleCommand(state: FooBarState, cmd: FooBarCmd[_]): (FooBarState, FooBarStateEvent) = cmd match {
+    case HandleFooDone(msg) =>
+      println(s"==> Handling command: $state, $cmd")
+      (state.copy(foo = Option(msg)), FooEventReceived(msg))
+    case HandleBarDone(msg) =>
+      println(s"==> Handling command: $state, $cmd")
+      (state.copy(bar = Option(msg)), BarEventReceived(msg))
+  }
+
+  def handleEvent(state: FooBarState, event: FooBarStateEvent): FooBarState = event match {
+    case FooEventReceived(msg) =>
+      println(s"==> Handling event: $state, $event")
+      state.copy(foo = Option(msg))
+    case BarEventReceived(msg) =>
+      println(s"==> Handling event: $state, $event")
+      state.copy(bar = Option(msg))
+  }
 }

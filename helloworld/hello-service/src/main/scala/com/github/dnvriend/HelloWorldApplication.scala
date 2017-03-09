@@ -16,14 +16,21 @@
 
 package com.github.dnvriend
 
+import akka.actor.ActorSystem
 import akka.pattern.CircuitBreaker
-import com.github.dnvriend.component.hello.{ CallHelloApi, CallHelloService, HelloApi, HelloService }
+import akka.util.Timeout
+import com.github.dnvriend.component.hello.FooBarEntity.{ BarEventReceived, FooEventReceived }
+import com.github.dnvriend.component.hello.{ CallHelloApi, CallHelloService, FooBarEntity, FooBarService, FooBarServiceImpl, HelloApi, HelloService }
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
+import com.lightbend.lagom.scaladsl.playjson.{ JsonSerializer, JsonSerializerRegistry }
 import com.lightbend.lagom.scaladsl.server._
 import com.softwaremill.macwire._
 import lagom.components.cb.CircuitBreakerComponents
 import lagom.components.kafka.{ DefaultKafkaProducer, KafkaProducer }
 import play.api.libs.ws.ahc.AhcWSComponents
+
+import scala.collection.immutable.Seq
+import scala.concurrent.duration._
 
 abstract class HelloWorldApplication(context: LagomApplicationContext) extends LagomApplication(context)
     with CassandraPersistenceComponents
@@ -43,15 +50,27 @@ abstract class HelloWorldApplication(context: LagomApplicationContext) extends L
   val helloServiceClient: HelloApi = serviceClient.implement[HelloApi]
   lazy val cb: CircuitBreaker = wireWith(circuitBreakerProvider _)
   lazy val kafkaProducer: KafkaProducer = wire[DefaultKafkaProducer]
+  implicit lazy val timeout: Timeout = 30.seconds
+  implicit val implicitActorSystem: ActorSystem = actorSystem
 
   // Bind the services that this server provides
   override lazy val lagomServer: LagomServer = {
     LagomServer.forServices(
       bindService[HelloApi].to(wire[HelloService]),
-      bindService[CallHelloApi].to(wire[CallHelloService])
+      bindService[CallHelloApi].to(wire[CallHelloService]),
+      bindService[FooBarService].to(wire[FooBarServiceImpl])
     )
   }
 
   // Register the JSON serializer registry
-  override lazy val jsonSerializerRegistry = HelloWorldSerializerRegistry
+  override lazy val jsonSerializerRegistry = new JsonSerializerRegistry {
+    override def serializers: Seq[JsonSerializer[_]] = Seq(
+      JsonSerializer[FooEventReceived],
+      JsonSerializer[BarEventReceived]
+    )
+  }
+
+  //   Register the lagom-scala persistent entity
+  persistentEntityRegistry.register(wire[FooBarEntity])
+
 }

@@ -249,6 +249,16 @@ Here, the required `ServiceLocator` will be mixed in or implemented depending on
 For an indepth discussion on how to wire a Lagom application please read:
 [Wiring together a Lagom application](http://www.lagomframework.com/documentation/1.3.x/scala/ServiceImplementation.html#Wiring-together-a-Lagom-application).
 
+## Cluster
+If you want to scale your microservices out across multiple servers, Lagom provides clustering via [Akka Cluster](http://doc.akka.io/docs/akka/2.4/common/cluster.html).
+
+Customers of Lightbend’s Reactive Platform can additionally use Lightbend ConductR and Akka’s Split Brain Resolver for deployment and cluster management and Lightbend Monitoring for monitoring production systems.
+
+## Cluster composition
+A cluster should only span nodes that are running the same service.
+
+You could imagine using cluster features across different services, but we recommend against that, because it would couple the services too tightly. Different services should only interact with each other through each service’s API, meaning communicating synchronously via REST or subscribing to a topic.
+
 ## ConductR
 [ConductR](http://conductr.lightbend.com/) is a container orchestration tool with the main goal of delivering operational
 productivity. ConductR is also designed to host your Lagom services with resilience. For a developer this means that

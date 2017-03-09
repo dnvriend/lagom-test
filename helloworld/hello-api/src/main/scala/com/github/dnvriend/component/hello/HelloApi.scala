@@ -17,10 +17,23 @@
 package com.github.dnvriend.component.hello
 
 import akka.NotUsed
-import com.lightbend.lagom.scaladsl.api._
 import com.lightbend.lagom.scaladsl.api.Service._
+import com.lightbend.lagom.scaladsl.api._
 import com.lightbend.lagom.scaladsl.api.transport.Method
 import play.api.libs.json.{ Format, Json }
+import serializer.XmlMessageSerializer._
+
+import scala.xml.Elem
+
+case class DoFoo(id: String, msg: String)
+object DoFoo {
+  implicit val format = Json.format[DoFoo]
+}
+
+case class DoBar(id: String, msg: String)
+object DoBar {
+  implicit val format = Json.format[DoBar]
+}
 
 case class Message(msg: String, time: Long)
 object Message {
@@ -46,7 +59,6 @@ object Credentials {
 // by providing this mapping in the Descriptor
 //
 trait HelloApi extends Service {
-
   // A ServiceCall is an abstraction of a service call for an entity.
   //
   // A ServiceCall, is a representation of the call that can be invoked when consuming the service,
@@ -66,6 +78,9 @@ trait HelloApi extends Service {
   def addItem(orderId: Long): ServiceCall[Item, NotUsed]
   def createToken: ServiceCall[Credentials, String]
   def produceMessage(msg: String, key: String): ServiceCall[NotUsed, NotUsed]
+  def doFooBar(msg: String, key: String): ServiceCall[NotUsed, String]
+  def respondWithXml: ServiceCall[NotUsed, Elem]
+  def postSomeXml: ServiceCall[Elem, Elem]
 
   // While the 'sayHello' method describes how the call will be programmatically invoked or implemented,
   // it does not describe how this call gets mapped down onto the transport.
@@ -179,6 +194,15 @@ trait HelloApi extends Service {
 
       // available at 'http :9000/api/produce/foo/123'
       pathCall("/api/produce/:msg/:key", produceMessage _),
+
+      // available at 'http :9000/api/foobar/foo/123'
+      pathCall("/api/foobar/:msg/:key", doFooBar _),
+
+      // available at 'http :9000/api/xml'
+      pathCall("/api/xml", respondWithXml),
+
+      // available at 'http POST :9000/api/xml Content-Type:application/xml @postxml.xml'
+      pathCall("/api/xml", postSomeXml),
 
       // ##
       // ## Rest Call

@@ -62,6 +62,10 @@ object Hello {
   }
 }
 
+object HelloApi {
+  final val Name = "hello-api"
+}
+
 // http://www.lagomframework.com/documentation/1.3.x/scala/ServiceDescriptors.html
 //
 // The HelloApi (which is-a Service) mixes in a DSL for describing a (Lagom) Service.
@@ -111,7 +115,7 @@ trait HelloApi extends Service {
     //
     // Generally, the service descriptor, its implementation and consumption should remain agnostic to what transport is being used,
     // whether that’s REST, websockets, or some other transport.
-    val descriptor: Descriptor = named("hello-api")
+    val descriptor: Descriptor = named(HelloApi.Name)
 
     // Each service call needs to have an identifier.
     // An identifier is used to provide 'routing information' to the implementation of the client, and the service,

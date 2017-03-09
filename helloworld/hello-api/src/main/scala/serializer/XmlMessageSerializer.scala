@@ -16,6 +16,10 @@ trait ElemFormat[Message] {
 }
 
 object XmlMessageSerializer {
+  final val ContentTypeApplicationXml = "application/xml"
+  final val ContentTypeTextXml = "text/xml"
+  private val `application/xml` = MessageProtocol(Some(ContentTypeApplicationXml), Some("utf-8"), None)
+  private val `text/xml` = MessageProtocol(Some(ContentTypeTextXml), Some("utf-8"), None)
 
   implicit def elemFormatMessageSerializer[Message](implicit xmlMessageSerializer: MessageSerializer[Elem, ByteString], elemFormat: ElemFormat[Message]): StrictMessageSerializer[Message] = new StrictMessageSerializer[Message] {
     private class ElemFormatSerializer(elemValueSerializer: NegotiatedSerializer[Elem, ByteString]) extends NegotiatedSerializer[Message, ByteString] {
@@ -48,10 +52,6 @@ object XmlMessageSerializer {
   }
 
   implicit val XmlMessageSerializer: StrictMessageSerializer[Elem] = new StrictMessageSerializer[Elem] {
-    final val ContentTypeApplicationXml = "application/xml"
-    final val ContentTypeTextXml = "text/xml"
-    private val `application/xml` = MessageProtocol(Some(ContentTypeApplicationXml), Some("utf-8"), None)
-    private val `text/xml` = MessageProtocol(Some(ContentTypeTextXml), Some("utf-8"), None)
     override val acceptResponseProtocols: immutable.Seq[MessageProtocol] = immutable.Seq(`application/xml`, `text/xml`)
 
     private class XmlSerializer(override val protocol: MessageProtocol) extends NegotiatedSerializer[Elem, ByteString] {

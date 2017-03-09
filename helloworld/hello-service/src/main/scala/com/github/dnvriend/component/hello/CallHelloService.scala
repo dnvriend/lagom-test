@@ -10,10 +10,12 @@ import scala.concurrent.ExecutionContext
 class CallHelloService @Inject() (hello: HelloApi, config: Configuration)(implicit ec: ExecutionContext) extends CallHelloApi {
   override def callHello(username: String): ServiceCall[NotUsed, String] =
     ServiceCall { _ =>
-      hello.sayHelloWithName(username).invoke().map { response =>
-        val msg = s"Hello service said: $response"
-        println(msg)
-        msg
-      }
+      hello.sayHelloWithName(username)
+        //        .handleRequestHeader(_.withAcceptedResponseProtocols(List(MessageProtocol.fromContentTypeHeader(Option("application/xml")))))
+        .invoke().map { (response: String) =>
+          val msg = s"Hello service said: $response"
+          println(msg)
+          msg
+        }
     }
 }

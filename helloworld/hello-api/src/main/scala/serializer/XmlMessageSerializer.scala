@@ -4,9 +4,11 @@ import akka.util.ByteString
 import com.lightbend.lagom.scaladsl.api.deser.MessageSerializer.{ NegotiatedDeserializer, NegotiatedSerializer }
 import com.lightbend.lagom.scaladsl.api.deser.{ MessageSerializer, StrictMessageSerializer }
 import com.lightbend.lagom.scaladsl.api.transport._
+import play.api.libs.json.Format
 
 import scala.collection.immutable
 import scala.collection.immutable.Seq
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 import scala.xml.{ Elem, XML }
 
@@ -21,7 +23,7 @@ object XmlMessageSerializer {
   private val `application/xml` = MessageProtocol(Some(ContentTypeApplicationXml), Some("utf-8"), None)
   private val `text/xml` = MessageProtocol(Some(ContentTypeTextXml), Some("utf-8"), None)
 
-  implicit def elemFormatMessageSerializer[Message](implicit xmlMessageSerializer: MessageSerializer[Elem, ByteString], elemFormat: ElemFormat[Message]): StrictMessageSerializer[Message] = new StrictMessageSerializer[Message] {
+  implicit def elemFormatMessageSerializer[Message: ClassTag](implicit xmlMessageSerializer: MessageSerializer[Elem, ByteString], elemFormat: ElemFormat[Message], jsFormat: Format[Message] = null): StrictMessageSerializer[Message] = new StrictMessageSerializer[Message] {
     private class ElemFormatSerializer(elemValueSerializer: NegotiatedSerializer[Elem, ByteString]) extends NegotiatedSerializer[Message, ByteString] {
       override def protocol: MessageProtocol = elemValueSerializer.protocol
       override def serialize(message: Message): ByteString = try {
@@ -44,8 +46,20 @@ object XmlMessageSerializer {
     override def deserializer(protocol: MessageProtocol): NegotiatedDeserializer[Message, ByteString] =
       new ElemFormatDeserializer(xmlMessageSerializer.deserializer(protocol))
 
-    override def serializerForResponse(acceptedMessageProtocols: Seq[MessageProtocol]): NegotiatedSerializer[Message, ByteString] =
-      new ElemFormatSerializer(xmlMessageSerializer.serializerForResponse(acceptedMessageProtocols))
+    override def serializerForResponse(acceptedMessageProtocols: Seq[MessageProtocol]): NegotiatedSerializer[Message, ByteString] = {
+      val contentTypes = acceptedMessageProtocols.flatMap(_.contentType)
+      contentTypes match {
+        case _ if contentTypes.contains("application/json") && Option(jsFormat).isDefined =>
+          MessageSerializer.jsValueFormatMessageSerializer[Message].serializerForResponse(acceptedMessageProtocols)
+        case _ if contentTypes.contains("application/json") && Option(jsFormat).isEmpty =>
+          val clazz = implicitly[ClassTag[Message]].runtimeClass
+          val classFQN = clazz.getName
+          val classSimpleName = clazz.getSimpleName
+          throw DeserializationException(s"No Json format defined for class '$classFQN', please add an implicit val format: Format[$classSimpleName] = Json.format to the companion object of '$classFQN' or choose another content-type by changing the value of the Accept header of your request.")
+        case _ =>
+          new ElemFormatSerializer(xmlMessageSerializer.serializerForResponse(acceptedMessageProtocols))
+      }
+    }
 
     override def serializerForRequest: NegotiatedSerializer[Message, ByteString] =
       new ElemFormatSerializer(xmlMessageSerializer.serializerForRequest)

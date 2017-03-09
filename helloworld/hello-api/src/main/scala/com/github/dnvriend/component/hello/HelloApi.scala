@@ -53,6 +53,7 @@ object Credentials {
 
 case class Hello(msg: String)
 object Hello {
+  implicit val jsonFormat: Format[Hello] = Json.format
   implicit val xmlFormat: ElemFormat[Hello] = new ElemFormat[Hello] {
     override def toElem(msg: Hello): Elem =
       <hello>{ msg.msg }</hello>
@@ -218,7 +219,7 @@ trait HelloApi extends Service {
       // available at 'http :9000/api/xml'
       pathCall("/api/xml/get", respondWithXml),
 
-      // available at 'http POST :9000/api/xml Content-Type:application/xml @postxml.xml'
+      // available at 'http POST :9000/api/xml/post Content-Type:application/xml @postxml.xml'
       pathCall("/api/xml/post", postSomeXml),
 
       // available at 'http :9000/api/xml/hello'

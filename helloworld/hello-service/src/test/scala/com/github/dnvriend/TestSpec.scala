@@ -8,11 +8,11 @@ import com.lightbend.lagom.scaladsl.server.{ LagomApplication, LagomServer, Loca
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{ BeforeAndAfterAll, FlatSpec, Matchers }
-import play.api.libs.ws.WSClient
+import play.api.libs.ws.{ WSClient, WSRequest }
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.test.WsTestClient
-
 import com.softwaremill.macwire._
+
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 import scala.concurrent.duration._
@@ -38,8 +38,6 @@ abstract class TestSpec extends FlatSpec with Matchers with BeforeAndAfterAll wi
     withClient(client => block(uri)(client))
   }
 
-  implicit def uriToString(uri: URI): String = uri.toString
-
   implicit class PimpedByteArray(self: Array[Byte]) {
     def getString: String = new String(self)
   }
@@ -54,5 +52,9 @@ abstract class TestSpec extends FlatSpec with Matchers with BeforeAndAfterAll wi
 
   override protected def afterAll(): Unit = {
     server.stop()
+  }
+
+  implicit class WsClientOps(client: WSClient) {
+    def withUrl(url: String)(implicit uri: URI): WSRequest = client.url(uri.toString + url)
   }
 }

@@ -110,6 +110,10 @@ class HelloService @Inject() (serviceLocator: ServiceLocator, entityRegistry: Pe
       </envelope>
     Future.successful(xml)
   }
+
+  override def respondWithXmlHello: ServiceCall[NotUsed, Hello] = ServiceCall { _ =>
+    Future.successful(Hello("Hi there!"))
+  }
 }
 
 object FooBarEntity {

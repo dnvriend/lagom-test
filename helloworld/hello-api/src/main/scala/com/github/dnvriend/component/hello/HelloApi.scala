@@ -21,6 +21,7 @@ import com.lightbend.lagom.scaladsl.api.Service._
 import com.lightbend.lagom.scaladsl.api._
 import com.lightbend.lagom.scaladsl.api.transport.Method
 import play.api.libs.json.{ Format, Json }
+import serializer.ElemFormat
 import serializer.XmlMessageSerializer._
 
 import scala.xml.Elem
@@ -48,6 +49,17 @@ final case class Item(name: String)
 case class Credentials(user: String, password: String)
 object Credentials {
   implicit val format: Format[Credentials] = Json.format
+}
+
+case class Hello(msg: String)
+object Hello {
+  implicit val xmlFormat: ElemFormat[Hello] = new ElemFormat[Hello] {
+    override def toElem(msg: Hello): Elem =
+      <hello>{ msg.msg }</hello>
+
+    override def fromElem(xml: Elem): Hello =
+      Hello(xml.toString)
+  }
 }
 
 // http://www.lagomframework.com/documentation/1.3.x/scala/ServiceDescriptors.html
@@ -81,6 +93,7 @@ trait HelloApi extends Service {
   def doFooBar(msg: String, key: String): ServiceCall[NotUsed, String]
   def respondWithXml: ServiceCall[NotUsed, Elem]
   def postSomeXml: ServiceCall[Elem, Elem]
+  def respondWithXmlHello: ServiceCall[NotUsed, Hello]
 
   // While the 'sayHello' method describes how the call will be programmatically invoked or implemented,
   // it does not describe how this call gets mapped down onto the transport.
@@ -199,10 +212,13 @@ trait HelloApi extends Service {
       pathCall("/api/foobar/:msg/:key", doFooBar _),
 
       // available at 'http :9000/api/xml'
-      pathCall("/api/xml", respondWithXml),
+      pathCall("/api/xml/get", respondWithXml),
 
       // available at 'http POST :9000/api/xml Content-Type:application/xml @postxml.xml'
-      pathCall("/api/xml", postSomeXml),
+      pathCall("/api/xml/post", postSomeXml),
+
+      // available at 'http :9000/api/xml/hello'
+      pathCall("/api/xml/hello", respondWithXmlHello),
 
       // ##
       // ## Rest Call

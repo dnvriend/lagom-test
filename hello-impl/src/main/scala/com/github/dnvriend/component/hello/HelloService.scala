@@ -28,12 +28,13 @@ import com.lightbend.lagom.scaladsl.persistence.{ AggregateEvent, AggregateEvent
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import kafka.KafkaProducer
 import play.api.libs.json.{ Format, Json }
+import play.api.libs.ws.WSClient
 
 import scala.compat.Platform
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.xml.Elem
 
-class HelloService(serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry, producer: KafkaProducer)(implicit ec: ExecutionContext, timeout: Timeout) extends HelloApi {
+class HelloService(wsClient: WSClient, serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry, producer: KafkaProducer)(implicit ec: ExecutionContext, timeout: Timeout) extends HelloApi {
 
   val authRepo = new AuthRepository {
     override def getAuth(name: String): Option[Auth] =
@@ -112,6 +113,13 @@ class HelloService(serviceLocator: ServiceLocator, entityRegistry: PersistentEnt
 
   override def respondWithXmlHello: ServiceCall[NotUsed, Hello] = ServiceCall { _ =>
     Future.successful(Hello("Hi there!"))
+  }
+
+  override def proxyPing: ServiceCall[NotUsed, String] = ServiceCall { _ =>
+    serviceLocator.locate("akka-http-service").flatMap { uri =>
+      val base = uri.get.toString
+      wsClient.url(s"$base/api/ping").get().map(_.body)
+    }
   }
 }
 

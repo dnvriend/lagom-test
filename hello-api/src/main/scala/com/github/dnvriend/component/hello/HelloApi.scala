@@ -99,6 +99,7 @@ trait HelloApi extends Service {
   def respondWithXml: ServiceCall[NotUsed, Elem]
   def postSomeXml: ServiceCall[Elem, Elem]
   def respondWithXmlHello: ServiceCall[NotUsed, Hello]
+  def proxyPing: ServiceCall[NotUsed, String]
 
   // While the 'sayHello' method describes how the call will be programmatically invoked or implemented,
   // it does not describe how this call gets mapped down onto the transport.
@@ -224,6 +225,8 @@ trait HelloApi extends Service {
 
       // available at 'http :9000/api/xml/hello'
       pathCall("/api/xml/hello", respondWithXmlHello),
+
+      pathCall("/api/ping", proxyPing),
 
       // ##
       // ## Rest Call

@@ -14,6 +14,8 @@ lagomCassandraCleanOnStart := true
 lagomKafkaEnabled := true
 lagomKafkaCleanOnStart := true
 
+lagomUnmanagedServices in ThisBuild := Map("akka-http-service" -> "http://localhost:18080")
+
 val macwire: ModuleID = "com.softwaremill.macwire" %% "macros" % "2.3.0" % Provided
 val scalaTest: ModuleID = "org.scalatest" %% "scalatest" % "3.0.1" % Test
 val jwt: ModuleID = "com.jason-goodwin" %% "authentikat-jwt" % "0.4.1"
@@ -25,8 +27,17 @@ val kafkaDeps: Seq[ModuleID] = Seq(
   "com.sksamuel.avro4s" %% "avro4s-core" % "1.6.4"
 )
 
+val akkaHttpDeps: Seq[ModuleID] = Seq(
+  "com.typesafe.akka" %% "akka-http-core" % "10.0.4",
+  "com.typesafe.akka" %% "akka-http" % "10.0.4",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.4",
+  "com.typesafe.akka" %% "akka-http-jackson" % "10.0.4",
+  "com.typesafe.akka" %% "akka-http-xml" % "10.0.4",
+  "com.typesafe.akka" %% "akka-http-testkit" % "10.0.4" % Test
+)
+
 lazy val `intro-to-lagom` = (project in file("."))
-  .aggregate(`hello-api`, `hello-impl`)//, `person-api`, `person-impl`)
+  .aggregate(`hello-api`, `hello-impl`, `person-api`, `person-impl`, `akka-http-service`)
 
 lazy val `hello-api` = (project in file("hello-api"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -43,18 +54,18 @@ lazy val `hello-impl` = (project in file("hello-impl"))
   .enablePlugins(GenericSettings)
   .enablePlugins(LagomScala)
   //  .enablePlugins(LagomConductRPlugin)
-//  .enablePlugins(Cinnamon)
+  //  .enablePlugins(Cinnamon)
   .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslApi,
-      lagomScaladslPersistenceCassandra,
-      lagomScaladslKafkaBroker,
-      lagomScaladslTestKit,
-      macwire,
-      scalaTest
-    ),
-    libraryDependencies ++= kafkaDeps
-  )
+  libraryDependencies ++= Seq(
+    lagomScaladslApi,
+    lagomScaladslPersistenceCassandra,
+    lagomScaladslKafkaBroker,
+    lagomScaladslTestKit,
+    macwire,
+    scalaTest
+  ),
+  libraryDependencies ++= kafkaDeps
+)
   .settings(lagomForkedTestSettings: _*)
   .dependsOn(`hello-api`, `auth-lib`, `cb-lib`, `kafka-lib`)
 
@@ -135,3 +146,15 @@ lazy val `test-lib` = (project in file("test-lib"))
     scalaTest,
     macwire
   ))
+
+lazy val `akka-http-service` = (project in file("akka-http-service"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GenericSettings)
+  .enablePlugins(LagomScala)
+  .settings(
+    libraryDependencies ++= Seq(
+      scalaTest,
+      macwire
+    ),
+    libraryDependencies ++= akkaHttpDeps
+  ).dependsOn(`hello-api`)

@@ -15,7 +15,7 @@ import scalariform.formatter.preferences._
 
 object GenericSettings extends AutoPlugin {
 	
-  override def requires = com.typesafe.sbt.SbtScalariform && LagomScala && AutomateHeaderPlugin
+  override def requires = com.typesafe.sbt.SbtScalariform
 
   object autoImport {   
   }
@@ -36,8 +36,5 @@ object GenericSettings extends AutoPlugin {
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
     .setPreference(DoubleIndentClassDeclaration, true)
-
-	// lagom configuration
-//	  lagomServiceLocatorPort in ThisBuild := 8000
   )
 }

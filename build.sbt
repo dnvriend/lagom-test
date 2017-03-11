@@ -7,14 +7,19 @@ version in ThisBuild := "1.0.0-SNAPSHOT"
 scalaVersion in ThisBuild := "2.11.8"
 
 // cassandra
-lagomCassandraEnabled := true
-lagomCassandraCleanOnStart := true
+lagomCassandraEnabled in ThisBuild := true
+lagomCassandraCleanOnStart in ThisBuild := true
 
 // kafka
-lagomKafkaEnabled := true
-lagomKafkaCleanOnStart := true
+lagomKafkaEnabled in ThisBuild := true
+lagomKafkaCleanOnStart in ThisBuild := true
 
-lagomUnmanagedServices in ThisBuild := Map("akka-http-service" -> "http://localhost:18080")
+lagomUnmanagedServices in ThisBuild := Map(
+  "akka-http-service" -> "http://localhost:18080",
+  "akka-http-play-service" -> "http://localhost:18081"
+)
+
+val akkaVersion = "2.4.17"
 
 val macwire: ModuleID = "com.softwaremill.macwire" %% "macros" % "2.3.0" % Provided
 val scalaTest: ModuleID = "org.scalatest" %% "scalatest" % "3.0.1" % Test
@@ -37,7 +42,7 @@ val akkaHttpDeps: Seq[ModuleID] = Seq(
 )
 
 lazy val `intro-to-lagom` = (project in file("."))
-  .aggregate(`hello-api`, `hello-impl`, `person-api`, `person-impl`, `akka-http-service`)
+  .aggregate(`hello-api`, `hello-impl`, `person-api`, `person-impl`, `akka-http-service`, `play-service`)
 
 lazy val `hello-api` = (project in file("hello-api"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -157,4 +162,21 @@ lazy val `akka-http-service` = (project in file("akka-http-service"))
       macwire
     ),
     libraryDependencies ++= akkaHttpDeps
+  ).dependsOn(`hello-api`)
+
+lazy val `play-service` = (project in file("play-service"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GenericSettings)
+  .enablePlugins(LagomPlay && PlayScala)
+  .settings(
+    libraryDependencies ++= akkaHttpDeps,
+    libraryDependencies += macwire,
+    libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.8",
+    libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.10.0",
+    libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided",
+    libraryDependencies += "org.typelevel" %% "scalaz-scalatest" % "1.1.1" % Test,
+    libraryDependencies += "org.mockito" % "mockito-core" % "2.6.8" % Test,
+    libraryDependencies += "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
+    libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+    libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0-M2" % Test
   ).dependsOn(`hello-api`)

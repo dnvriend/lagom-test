@@ -24,7 +24,7 @@ import play.api.libs.json.{ Format, Json }
 import serializer.ElemFormat
 import serializer.XmlMessageSerializer._
 
-import scala.xml.Elem
+import scala.xml.{ NodeSeq }
 
 case class DoFoo(id: String, msg: String)
 object DoFoo {
@@ -55,10 +55,10 @@ case class Hello(msg: String)
 object Hello {
   implicit val jsonFormat: Format[Hello] = Json.format
   implicit val xmlFormat: ElemFormat[Hello] = new ElemFormat[Hello] {
-    override def toElem(msg: Hello): Elem =
+    override def toElem(msg: Hello): NodeSeq =
       <hello>{ msg.msg }</hello>
 
-    override def fromElem(xml: Elem): Hello =
+    override def fromElem(xml: NodeSeq): Hello =
       Hello(xml.text)
   }
 }
@@ -96,8 +96,8 @@ trait HelloApi extends Service {
   def createToken: ServiceCall[Credentials, String]
   def produceMessage(msg: String, key: String): ServiceCall[NotUsed, NotUsed]
   def doFooBar(msg: String, key: String): ServiceCall[NotUsed, String]
-  def respondWithXml: ServiceCall[NotUsed, Elem]
-  def postSomeXml: ServiceCall[Elem, Elem]
+  def respondWithXml: ServiceCall[NotUsed, NodeSeq]
+  def postSomeXml: ServiceCall[NodeSeq, NodeSeq]
   def respondWithXmlHello: ServiceCall[NotUsed, Hello]
   def proxyPing: ServiceCall[NotUsed, String]
 

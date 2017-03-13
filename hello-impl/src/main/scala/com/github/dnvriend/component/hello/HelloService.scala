@@ -32,7 +32,7 @@ import play.api.libs.ws.WSClient
 
 import scala.compat.Platform
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.xml.Elem
+import scala.xml.NodeSeq
 
 class HelloService(wsClient: WSClient, serviceLocator: ServiceLocator, entityRegistry: PersistentEntityRegistry, producer: KafkaProducer)(implicit ec: ExecutionContext, timeout: Timeout) extends HelloApi {
 
@@ -91,7 +91,7 @@ class HelloService(wsClient: WSClient, serviceLocator: ServiceLocator, entityReg
       NotUsed
     }
 
-  override def respondWithXml: ServiceCall[NotUsed, Elem] = ServiceCall { _ =>
+  override def respondWithXml: ServiceCall[NotUsed, NodeSeq] = ServiceCall { _ =>
     val xml =
       <people>
         <person>
@@ -102,7 +102,7 @@ class HelloService(wsClient: WSClient, serviceLocator: ServiceLocator, entityReg
     Future.successful(xml)
   }
 
-  override def postSomeXml: ServiceCall[Elem, Elem] = ServiceCall { entity =>
+  override def postSomeXml: ServiceCall[NodeSeq, NodeSeq] = ServiceCall { entity =>
     println(s"==> Got: $entity")
     val xml =
       <envelope>

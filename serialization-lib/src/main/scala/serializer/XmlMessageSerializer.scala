@@ -26,11 +26,11 @@ import scala.collection.immutable
 import scala.collection.immutable.Seq
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-import scala.xml.{ Elem, XML }
+import scala.xml.{ NodeSeq, XML }
 
 trait ElemFormat[Message] {
-  def toElem(msg: Message): Elem
-  def fromElem(xml: Elem): Message
+  def toElem(msg: Message): NodeSeq
+  def fromElem(xml: NodeSeq): Message
 }
 
 object XmlMessageSerializer {
@@ -39,22 +39,22 @@ object XmlMessageSerializer {
   private val `application/xml` = MessageProtocol(Some(ContentTypeApplicationXml), Some("utf-8"), None)
   private val `text/xml` = MessageProtocol(Some(ContentTypeTextXml), Some("utf-8"), None)
 
-  implicit def elemFormatMessageSerializer[Message: ClassTag](implicit xmlMessageSerializer: MessageSerializer[Elem, ByteString], elemFormat: ElemFormat[Message], jsFormat: Format[Message] = null): StrictMessageSerializer[Message] = new StrictMessageSerializer[Message] {
+  implicit def elemFormatMessageSerializer[Message: ClassTag](implicit xmlMessageSerializer: MessageSerializer[NodeSeq, ByteString], elemFormat: ElemFormat[Message], jsFormat: Format[Message] = null): StrictMessageSerializer[Message] = new StrictMessageSerializer[Message] {
     val messageClass: Class[_] = implicitly[ClassTag[Message]].runtimeClass
     val messageClassFQN: String = messageClass.getName
     val messageClassSimpleName: String = messageClass.getSimpleName
 
-    private class ElemFormatSerializer(elemValueSerializer: NegotiatedSerializer[Elem, ByteString]) extends NegotiatedSerializer[Message, ByteString] {
+    private class ElemFormatSerializer(elemValueSerializer: NegotiatedSerializer[NodeSeq, ByteString]) extends NegotiatedSerializer[Message, ByteString] {
       override def protocol: MessageProtocol = elemValueSerializer.protocol
       override def serialize(message: Message): ByteString = try {
-        val xml: Elem = elemFormat.toElem(message)
+        val xml: NodeSeq = elemFormat.toElem(message)
         elemValueSerializer.serialize(xml)
       } catch {
         case NonFatal(e) => throw DeserializationException(e)
       }
     }
 
-    private class ElemFormatDeserializer(xmlDeserializer: NegotiatedDeserializer[Elem, ByteString]) extends NegotiatedDeserializer[Message, ByteString] {
+    private class ElemFormatDeserializer(xmlDeserializer: NegotiatedDeserializer[NodeSeq, ByteString]) extends NegotiatedDeserializer[Message, ByteString] {
       override def deserialize(wire: ByteString): Message = {
         val xml = xmlDeserializer.deserialize(wire)
         elemFormat.fromElem(xml)
@@ -82,20 +82,20 @@ object XmlMessageSerializer {
       new ElemFormatSerializer(xmlMessageSerializer.serializerForRequest)
   }
 
-  implicit val XmlMessageSerializer: StrictMessageSerializer[Elem] = new StrictMessageSerializer[Elem] {
+  implicit val XmlMessageSerializer: StrictMessageSerializer[NodeSeq] = new StrictMessageSerializer[NodeSeq] {
     override val acceptResponseProtocols: immutable.Seq[MessageProtocol] = immutable.Seq(`application/xml`, `text/xml`)
 
-    private class XmlSerializer(override val protocol: MessageProtocol) extends NegotiatedSerializer[Elem, ByteString] {
-      override def serialize(s: Elem) = ByteString.fromString(s.toString, protocol.charset.getOrElse("utf-8"))
+    private class XmlSerializer(override val protocol: MessageProtocol) extends NegotiatedSerializer[NodeSeq, ByteString] {
+      override def serialize(s: NodeSeq) = ByteString.fromString(s.toString, protocol.charset.getOrElse("utf-8"))
     }
 
-    private class XmlDeserializer(charset: String) extends NegotiatedDeserializer[Elem, ByteString] {
+    private class XmlDeserializer(charset: String) extends NegotiatedDeserializer[NodeSeq, ByteString] {
       override def deserialize(wire: ByteString) = XML.loadString(wire.decodeString(charset))
     }
 
-    override def serializerForRequest: NegotiatedSerializer[Elem, ByteString] = new XmlSerializer(`application/xml`)
+    override def serializerForRequest: NegotiatedSerializer[NodeSeq, ByteString] = new XmlSerializer(`application/xml`)
 
-    override def deserializer(protocol: MessageProtocol): NegotiatedDeserializer[Elem, ByteString] = protocol.contentType match {
+    override def deserializer(protocol: MessageProtocol): NegotiatedDeserializer[NodeSeq, ByteString] = protocol.contentType match {
       case Some(ContentTypeApplicationXml) =>
         new XmlDeserializer(protocol.charset.getOrElse("utf-8"))
       case Some(ContentTypeTextXml) =>
@@ -104,7 +104,7 @@ object XmlMessageSerializer {
         throw UnsupportedMediaType(protocol, `application/xml`)
     }
 
-    override def serializerForResponse(acceptedMessageProtocols: immutable.Seq[MessageProtocol]): NegotiatedSerializer[Elem, ByteString] = {
+    override def serializerForResponse(acceptedMessageProtocols: immutable.Seq[MessageProtocol]): NegotiatedSerializer[NodeSeq, ByteString] = {
       new XmlSerializer(`application/xml`)
     }
   }

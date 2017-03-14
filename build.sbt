@@ -52,7 +52,7 @@ lazy val `hello-api` = (project in file("hello-api"))
       lagomScaladslApi
     )
   )
-  .dependsOn(`serialization-lib`)
+  .dependsOn(`serialization-lib`, `auth-lib`)
 
 lazy val `hello-impl` = (project in file("hello-impl"))
   .enablePlugins(AutomateHeaderPlugin)

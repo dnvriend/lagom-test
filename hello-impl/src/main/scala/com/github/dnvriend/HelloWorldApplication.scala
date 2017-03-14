@@ -19,6 +19,7 @@ package com.github.dnvriend
 import akka.actor.ActorSystem
 import akka.pattern.CircuitBreaker
 import akka.util.Timeout
+import auth.{ Auth, AuthRepository }
 import com.github.dnvriend.component.hello.FooBarEntity.{ BarEventReceived, FooEventReceived }
 import com.github.dnvriend.component.hello.{ CallHelloApi, CallHelloService, FooBarEntity, FooBarService, FooBarServiceImpl, HelloApi, HelloService }
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
@@ -46,6 +47,11 @@ abstract class HelloWorldApplication(context: LagomApplicationContext) extends L
   // The ServiceClient is provided by the LagomServiceClientComponents,
   // which is already implemented by LagomApplication, so to create a service
   // client from a Lagom application, you just have to do the following
+
+  val authRepository: AuthRepository = new AuthRepository {
+    override def getAuth(name: String): Option[Auth] =
+      Option(name).find(_ == "foo").map(name => Auth(name, "bar"))
+  }
 
   val helloServiceClient: HelloApi = serviceClient.implement[HelloApi]
   lazy val cb: CircuitBreaker = wireWith(circuitBreakerProvider _)

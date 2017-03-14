@@ -23,12 +23,6 @@ import com.lightbend.lagom.scaladsl.api.transport.{ Forbidden, RequestHeader }
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import play.api.libs.json.{ Format, Json }
 
-case class Auth(user: String, password: String)
-
-trait AuthRepository {
-  def getAuth(name: String): Option[Auth]
-}
-
 case class JwtCredentials(user: String, password: String)
 object JwtCredentials {
   implicit val format: Format[JwtCredentials] = Json.format
@@ -44,36 +38,40 @@ object AuthenticationServiceCall {
     JsonWebToken(header, claimsSet, JwtSecretKey)
   }
 
+  def isValidToken(jwtToken: String): Boolean =
+    JsonWebToken.validate(jwtToken, JwtSecretKey)
+
+  def decodePayload(jwtToken: String): Option[String] =
+    jwtToken match {
+      case JsonWebToken(_, claimsSet, _) => Option(claimsSet.asJsonString)
+      case _                             => None
+    }
+
+  def getJwToken(authorization: String): String = {
+    authorization.replace(" ", "").split("Bearer").drop(1).mkString
+  }
+
+  def getJwtCredentials(requestHeader: RequestHeader): Option[JwtCredentials] = for {
+    authorization <- requestHeader.getHeader("Authorization")
+    jwToken = getJwToken(authorization)
+    if isValidToken(jwToken)
+    payload <- decodePayload(jwToken)
+    creds <- Json.parse(payload).asOpt[JwtCredentials]
+  } yield creds
+
+  def authJwt(requestHeader: RequestHeader, authRepo: AuthRepository): Option[Auth] = for {
+    creds <- getJwtCredentials(requestHeader)
+    auth <- authRepo.getAuth(creds.user)
+    if auth.password == creds.password
+  } yield auth
+
   /**
    * JSON Web Token (JWT)
    * see: https://blog.knoldus.com/2017/02/14/jwt-authentication-with-play-framework/
    */
   def jwt[Request, Response](authRepo: AuthRepository)(serviceCall: Auth => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = {
-    def isValidToken(jwtToken: String): Boolean =
-      JsonWebToken.validate(jwtToken, JwtSecretKey)
-
-    def decodePayload(jwtToken: String): Option[String] =
-      jwtToken match {
-        case JsonWebToken(_, claimsSet, _) => Option(claimsSet.asJsonString)
-        case _                             => None
-      }
-
-    def getJwToken(authorization: String): String = {
-      authorization.replace(" ", "").split("Bearer").drop(1).mkString
-    }
-
-    def authJwt(requestHeader: RequestHeader): Option[Auth] = for {
-      authorization <- requestHeader.getHeader("Authorization")
-      jwToken = getJwToken(authorization)
-      if isValidToken(jwToken)
-      payload <- decodePayload(jwToken)
-      creds <- Json.parse(payload).asOpt[JwtCredentials]
-      auth <- authRepo.getAuth(creds.user)
-      if auth.password == creds.password
-    } yield auth
-
     ServerServiceCall.compose { (requestHeader: RequestHeader) =>
-      authJwt(requestHeader).map(auth => serviceCall(auth)).getOrElse(throw Forbidden(s"User must be authenticated to access this service call"))
+      authJwt(requestHeader, authRepo).map(auth => serviceCall(auth)).getOrElse(throw Forbidden(s"User must be authenticated to access this service call"))
     }
   }
 

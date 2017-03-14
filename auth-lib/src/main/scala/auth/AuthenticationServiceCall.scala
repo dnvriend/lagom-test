@@ -58,8 +58,13 @@ object AuthenticationServiceCall {
         case _                             => None
       }
 
+    def getJwToken(authorization: String): String = {
+      authorization.replace(" ", "").split("Bearer").drop(1).mkString
+    }
+
     def authJwt(requestHeader: RequestHeader): Option[Auth] = for {
-      jwToken <- requestHeader.getHeader("jw_token")
+      authorization <- requestHeader.getHeader("Authorization")
+      jwToken = getJwToken(authorization)
       if isValidToken(jwToken)
       payload <- decodePayload(jwToken)
       creds <- Json.parse(payload).asOpt[JwtCredentials]

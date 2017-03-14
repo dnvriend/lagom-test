@@ -179,7 +179,7 @@ trait HelloApi extends Service {
       namedCall("hello", sayHello),
       // using a customized name here 'helloAuth' and is available at: http --auth foo:bar :9000/helloAuth
       namedCall("helloAuth", sayHelloAuth),
-      // using JWT for authentication available at: http :9000/helloAuthJwt jw_token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZm9vIiwicGFzc3dvcmQiOiJiYXIifQ.36Px3s92nRp0sqZkRwS6nVmHZBRZhsGA0PR8IsEgsnU
+      // using JWT for authentication available at: http :9000/helloAuthJwt Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZm9vIiwicGFzc3dvcmQiOiJiYXIifQ.36Px3s92nRp0sqZkRwS6nVmHZBRZhsGA0PR8IsEgsnU"
       namedCall("helloAuthJwt", sayHelloAuthJwt),
       // creating a token available at: http :9000/createToken user=foo password=bar
       namedCall("createToken", createToken),

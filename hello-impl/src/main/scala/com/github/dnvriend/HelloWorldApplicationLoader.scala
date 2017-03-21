@@ -16,7 +16,8 @@
 
 package com.github.dnvriend
 
-import com.github.dnvriend.component.hello.HelloApi
+import com.github.dnvriend.api.HelloApi
+import com.github.dnvriend.application.HelloWorldApplication
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import com.typesafe.conductr.bundlelib.lagom.scaladsl.ConductRApplicationComponents

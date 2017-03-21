@@ -1,25 +1,42 @@
+/*
+ * Copyright 2016 Dennis
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.github.dnvriend
 
 import java.net.URI
 
 import akka.actor.ActorSystem
-import com.github.dnvriend.component.hello.{SimpleService, SimpleServiceImpl}
-import com.lightbend.lagom.scaladsl.server.{LagomApplication, LagomServer, LocalServiceLocator}
+import com.github.dnvriend.adapters.services.SimpleServiceImpl
+import com.github.dnvriend.api.SimpleService
+import com.lightbend.lagom.scaladsl.server.{ LagomApplication, LagomServer, LocalServiceLocator }
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import com.lightbend.lagom.scaladsl.testkit.ServiceTest.TestServer
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import play.api.libs.ws.{WSClient, WSRequest}
+import org.scalatest.{ BeforeAndAfterAll, FlatSpec, Matchers }
+import play.api.libs.ws.{ WSClient, WSRequest }
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.test.WsTestClient
 import com.softwaremill.macwire._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 import scala.concurrent.duration._
 
 abstract class TestSpec extends FlatSpec with Matchers with BeforeAndAfterAll with WsTestClient with ScalaFutures {
-  lazy val server: TestServer[LagomApplication with LocalServiceLocator with AhcWSComponents {val lagomServer: LagomServer}] = ServiceTest.startServer(ServiceTest.defaultSetup) { ctx =>
+  lazy val server: TestServer[LagomApplication with LocalServiceLocator with AhcWSComponents { val lagomServer: LagomServer }] = ServiceTest.startServer(ServiceTest.defaultSetup) { ctx =>
     new LagomApplication(ctx) with LocalServiceLocator with AhcWSComponents { self =>
       override lazy val lagomServer: LagomServer =
         LagomServer.forServices(bindService[SimpleService].to(wire[SimpleServiceImpl]))

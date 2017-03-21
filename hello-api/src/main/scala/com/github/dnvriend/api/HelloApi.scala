@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
+package com.github.dnvriend.api
 
 import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.Service._
 import com.lightbend.lagom.scaladsl.api._
 import com.lightbend.lagom.scaladsl.api.transport.Method
 import play.api.libs.json.{ Format, Json }
-import serializer.ElemFormat
+import serializer.XmlFormat
 import serializer.XmlMessageSerializer._
 
-import scala.xml.{ NodeSeq }
+import scala.xml.NodeSeq
 
 case class DoFoo(id: String, msg: String)
 object DoFoo {
-  implicit val format = Json.format[DoFoo]
+  implicit val format: Format[DoFoo] = Json.format
 }
 
 case class DoBar(id: String, msg: String)
 object DoBar {
-  implicit val format = Json.format[DoBar]
+  implicit val format: Format[DoBar] = Json.format
 }
 
 case class Message(msg: String, time: Long)
@@ -54,11 +54,11 @@ object Credentials {
 case class Hello(msg: String)
 object Hello {
   implicit val jsonFormat: Format[Hello] = Json.format
-  implicit val xmlFormat: ElemFormat[Hello] = new ElemFormat[Hello] {
-    override def toElem(msg: Hello): NodeSeq =
+  implicit val xmlFormat: XmlFormat[Hello] = new XmlFormat[Hello] {
+    override def marshal(msg: Hello): NodeSeq =
       <hello>{ msg.msg }</hello>
 
-    override def fromElem(xml: NodeSeq): Hello =
+    override def unmarshal(xml: NodeSeq): Hello =
       Hello(xml.text)
   }
 }

@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
+package com.github.dnvriend.adapters.services
 
 import akka.NotUsed
-import com.lightbend.lagom.scaladsl.api.Service._
-import com.lightbend.lagom.scaladsl.api.{ Descriptor, Service, _ }
+import com.github.dnvriend.adapters.api.NoopService
+import com.lightbend.lagom.scaladsl.api.ServiceCall
 
-object SimpleService {
-  final val Name = "simple-service"
-}
+import scala.concurrent.Future
 
-trait SimpleService extends Service {
-  def sayHello(name: String): ServiceCall[NotUsed, String]
-
-  override def descriptor: Descriptor =
-    named(SimpleService.Name).withCalls(
-      pathCall("/api/simple/:name", sayHello _)
-    ).withAutoAcl(true)
+class NoopServiceImpl extends NoopService {
+  override def noop: ServiceCall[NotUsed, NotUsed] = {
+    ServiceCall(_ => Future.successful(NotUsed))
+  }
 }

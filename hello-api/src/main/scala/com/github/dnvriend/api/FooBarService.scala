@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
+package com.github.dnvriend.api
 
 import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.Service._

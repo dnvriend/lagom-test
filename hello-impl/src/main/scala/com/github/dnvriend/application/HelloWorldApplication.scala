@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend
+package com.github.dnvriend.application
 
 import akka.actor.ActorSystem
 import akka.pattern.CircuitBreaker
 import akka.util.Timeout
 import auth.{ Auth, AuthRepository }
-import com.github.dnvriend.component.hello.FooBarEntity.{ BarEventReceived, FooEventReceived }
-import com.github.dnvriend.component.hello.{ CallHelloApi, CallHelloService, FooBarEntity, FooBarService, FooBarServiceImpl, HelloApi, HelloService }
+import cb.CircuitBreakerComponents
+import com.github.dnvriend.adapters.services.FooBarEntity.{ BarEventReceived, FooEventReceived }
+import com.github.dnvriend.adapters.services.{ CallHelloService, FooBarEntity, FooBarServiceImpl, HelloService }
+import com.github.dnvriend.api.{ CallHelloApi, FooBarService, HelloApi }
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
 import com.lightbend.lagom.scaladsl.playjson.{ JsonSerializer, JsonSerializerRegistry }
 import com.lightbend.lagom.scaladsl.server._
 import com.softwaremill.macwire._
-import play.api.libs.ws.ahc.AhcWSComponents
-import cb.CircuitBreakerComponents
 import kafka.{ DefaultKafkaProducer, KafkaProducer }
+import play.api.libs.ws.ahc.AhcWSComponents
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._

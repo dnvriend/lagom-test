@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
+package com.github.dnvriend.adapters.services
+
 import java.util.UUID
 
-import akka.{ Done, NotUsed }
 import akka.actor.ActorSystem
 import akka.kafka.ConsumerMessage.CommittableMessage
 import akka.kafka.scaladsl.Consumer
 import akka.kafka.{ ConsumerSettings, ProducerSettings, Subscriptions }
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
+import akka.{ Done, NotUsed }
+import com.github.dnvriend.api._
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import org.apache.kafka.common.serialization.{ Deserializer, Serializer }

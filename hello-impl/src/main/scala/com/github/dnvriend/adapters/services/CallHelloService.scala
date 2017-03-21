@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
+package com.github.dnvriend.adapters.services
+
 import akka.NotUsed
+import com.github.dnvriend.api.{ CallHelloApi, HelloApi }
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import play.api.Configuration
 

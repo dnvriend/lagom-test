@@ -14,53 +14,18 @@
  * limitations under the License.
  */
 
-import com.github.dnvriend.SimpleServer
-import com.github.dnvriend.component.hello.HelloApi
+import application.PlayApplication
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
-import com.lightbend.lagom.scaladsl.api.{ ServiceAcl, ServiceInfo }
-import com.lightbend.lagom.scaladsl.client.LagomServiceClientComponents
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
-import com.softwaremill.macwire._
-import controllers.Main
 import play.api.ApplicationLoader.Context
-import play.api.i18n.I18nComponents
-import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.{ ApplicationLoader, BuiltInComponentsFromContext, Mode }
-import router.Routes
-
-import scala.concurrent.ExecutionContext
-
-abstract class PlayService(context: Context) extends BuiltInComponentsFromContext(context)
-    with I18nComponents
-    with AhcWSComponents
-    with LagomServiceClientComponents {
-
-  println("==> Launching PlayService")
-
-  override lazy val serviceInfo: ServiceInfo = ServiceInfo(
-    "play-service",
-    Map(
-      "play-service" -> scala.collection.immutable.Seq(ServiceAcl.forPathRegex("(?!/api/).*"))
-    )
-  )
-  override implicit lazy val executionContext: ExecutionContext = actorSystem.dispatcher
-
-  lazy val helloClient = serviceClient.implement[HelloApi]
-  lazy val main = wire[Main]
-  lazy val simpleServer = new SimpleServer("0.0.0.0", 18081, helloClient)(actorSystem, materializer, executionContext)
-
-  override lazy val router = {
-    val prefix = "/"
-    wire[Routes]
-  }
-}
+import play.api.{ ApplicationLoader, Mode }
 
 class PlayServiceLoader extends ApplicationLoader {
   override def load(context: Context) = context.environment.mode match {
     case Mode.Dev =>
-      new PlayService(context) with LagomDevModeComponents {}.application
+      new PlayApplication(context) with LagomDevModeComponents {}.application
     case _ =>
-      new PlayService(context) {
+      new PlayApplication(context) {
         override def serviceLocator = NoServiceLocator
       }.application
   }

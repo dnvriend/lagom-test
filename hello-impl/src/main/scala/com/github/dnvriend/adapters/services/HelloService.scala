@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
+package com.github.dnvriend.adapters.services
 
 import java.net.URI
 
 import akka.util.Timeout
 import akka.{ Done, NotUsed }
 import auth._
-import com.github.dnvriend.component.hello.FooBarEntity._
+import com.github.dnvriend.adapters.services.FooBarEntity._
+import com.github.dnvriend.api._
 import com.lightbend.lagom.scaladsl.api.{ ServiceCall, ServiceLocator }
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
 import com.lightbend.lagom.scaladsl.persistence.{ AggregateEvent, AggregateEventTag, PersistentEntity, PersistentEntityRegistry }

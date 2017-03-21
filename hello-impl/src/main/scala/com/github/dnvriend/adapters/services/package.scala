@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.component.hello
-import akka.NotUsed
-import com.lightbend.lagom.scaladsl.api.ServiceCall
+package com.github.dnvriend.adapters
 
-class SimpleServiceImpl extends SimpleService {
-  override def sayHello(name: String): ServiceCall[NotUsed, String] =
-    ServiceCall(_ => "Hello")
+import scala.concurrent.Future
+import scala.language.implicitConversions
+
+package object services {
+  implicit def toFuture[A](a: A): Future[A] = Future.successful(a)
 }

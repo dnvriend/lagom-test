@@ -14,31 +14,15 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend
+package com.github.dnvriend.adapters.services
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{ Directives, Route }
 import akka.stream.Materializer
-import com.github.dnvriend.component.hello.{ Credentials, HelloApi }
+import com.github.dnvriend.api.HelloApi
 
 import scala.concurrent.ExecutionContext
 
-class SimpleServer(interface: String, port: Int, helloClient: HelloApi)(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) {
+class AkkaHttpService(interface: String, port: Int, helloClient: HelloApi)(implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) {
   Http().bindAndHandle(SimpleServerRoutes.routes(helloClient), interface, port)
-}
-
-object SimpleServerRoutes extends Directives {
-  def routes(helloClient: HelloApi)(implicit mat: Materializer, ec: ExecutionContext): Route =
-    logRequestResult("akka-http-service") {
-      pathPrefix("api") {
-        path("ping") {
-          complete("pong")
-        } ~
-          path("creds") {
-            // http :18080/api/creds
-            complete(helloClient.createToken.invoke(Credentials("foo", "bar")))
-          }
-      }
-    }
 }

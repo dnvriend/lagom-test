@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package controllers
+package serializer
 
-import com.github.dnvriend.component.hello.HelloApi
-import play.api.mvc.{ Action, Controller }
+import scala.xml.NodeSeq
 
-class Main(helloService: HelloApi) extends Controller {
-  def index = Action { request =>
-    Ok("play-service -> pong")
-  }
+trait XmlFormat[A] extends XmlMarshaller[A] with XmlUnmarshaller[A]
+trait XmlMarshaller[A] {
+  def marshal(value: A): NodeSeq
+}
+trait XmlUnmarshaller[A] {
+  def unmarshal(xml: NodeSeq): A
 }

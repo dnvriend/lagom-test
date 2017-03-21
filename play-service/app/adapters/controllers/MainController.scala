@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend
+package adapters.controllers
 
-import com.github.dnvriend.api.SimpleService
+import com.github.dnvriend.api.HelloApi
+import play.api.mvc.{ Action, Controller }
 
-class SimpleServiceTest extends TestSpec {
-  it should "do something" in withService(SimpleService.Name) { implicit uri => client =>
-    val result = client.withUrl("/api/simple/foo").get.map(_.body).futureValue
-    result shouldBe "Hello"
+class MainController(helloService: HelloApi) extends Controller {
+  def index = Action { request =>
+    Ok("play-service -> pong")
   }
 }

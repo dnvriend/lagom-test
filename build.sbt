@@ -43,6 +43,7 @@ val akkaHttpDeps: Seq[ModuleID] = Seq(
 
 lazy val `intro-to-lagom` = (project in file("."))
   .aggregate(`hello-api`, `hello-impl`, `person-api`, `person-impl`, `akka-http-service`, `play-service`)
+  .settings(libraryDependencies ~= (xs => xs.filterNot(module => module.organization == "org.slf4j" && module.name == "slf4j-nop")))
 
 lazy val `hello-api` = (project in file("hello-api"))
   .enablePlugins(AutomateHeaderPlugin)

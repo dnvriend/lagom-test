@@ -1,1 +1,1 @@
-GET        /api/ping        controllers.Main.index
+GET        /api/ping        adapters.controllers.MainController.index

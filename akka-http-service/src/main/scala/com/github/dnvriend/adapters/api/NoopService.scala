@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend
+package com.github.dnvriend.adapters.api
 
-import com.github.dnvriend.api.SimpleService
+import akka.NotUsed
+import com.lightbend.lagom.scaladsl.api.Service.{ call, named }
+import com.lightbend.lagom.scaladsl.api.{ Descriptor, Service, ServiceCall }
 
-class SimpleServiceTest extends TestSpec {
-  it should "do something" in withService(SimpleService.Name) { implicit uri => client =>
-    val result = client.withUrl("/api/simple/foo").get.map(_.body).futureValue
-    result shouldBe "Hello"
+trait NoopService extends Service {
+  def noop: ServiceCall[NotUsed, NotUsed]
+  override def descriptor: Descriptor = {
+    named("noop")
+      .withCalls(
+        call(noop)
+      ).withAutoAcl(true)
   }
 }

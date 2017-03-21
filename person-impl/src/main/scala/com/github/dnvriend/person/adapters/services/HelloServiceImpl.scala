@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.person
+package com.github.dnvriend.person.adapters.services
 
-import javax.inject.Inject
-
-import akka.{ Done, NotUsed }
-import akka.stream.scaladsl.Flow
+import com.github.dnvriend.person.{ HelloService, SayHelloRequest, SayHelloResponse }
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
-class PersonCreatedCounter @Inject() (personApi: PersonApi)(implicit ec: ExecutionContext) extends PersonCreatedCounterApi {
-  // very ugly...
-  var count = 0L
-
-  override def getCount: ServiceCall[NotUsed, Long] = ServiceCall { _ =>
-    Future.successful(count)
-  }
-
-  personApi.personCreatedTopic.subscribe.atLeastOnce {
-    Flow[TopicMessagePersonCreated].map { msg =>
-      println(s"==> Subscriber received: $msg")
-      count += 1
-      Done
-    }
+class HelloServiceImpl extends HelloService {
+  override def sayHello: ServiceCall[SayHelloRequest, SayHelloResponse] = ServiceCall {
+    case SayHelloRequest(name) => Future.successful(SayHelloResponse(s"Hi $name!"))
   }
 }

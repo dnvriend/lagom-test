@@ -28,6 +28,25 @@ object JwtCredentials {
   implicit val format: Format[JwtCredentials] = Json.format
 }
 
+final case class UserPassword(user: String, password: String)
+
+object Authentication {
+  def generateBasicAuthHeader(user: String, password: String): String = {
+    val base64Encoded: String = Base64.getEncoder.encodeToString(s"$user:$password".getBytes("UTF-8"))
+    s"Basic $base64Encoded"
+  }
+
+  def parseBasicAuthHeader(authHeader: String): Option[UserPassword] =
+    authHeader.split("""\s""") match {
+      case Array("Basic", userAndPass) =>
+        new String(Base64.getDecoder.decode(userAndPass), "UTF-8").split(":") match {
+          case Array(user, password) => Option(UserPassword(user, password))
+          case _                     => None
+        }
+      case _ => None
+    }
+}
+
 object AuthenticationServiceCall {
   final val JwtSecretKey = "secretKey"
   final val JwtSecretAlgo = "HS256"

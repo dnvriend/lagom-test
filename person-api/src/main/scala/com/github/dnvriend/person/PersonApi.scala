@@ -23,27 +23,28 @@ import com.lightbend.lagom.scaladsl.api.Service._
 import com.lightbend.lagom.scaladsl.api._
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.api.transport.Method
-import play.api.libs.json.Json
+import play.api.libs.json.{ Format, Json }
 
 object CreatePersonRequestMessage {
-  implicit val format = Json.format[CreatePersonRequestMessage]
+  implicit val format: Format[CreatePersonRequestMessage] = Json.format
 }
 
 case class CreatePersonRequestMessage(name: String, age: Int)
 
 object GetPersonResponseMessage {
-  implicit val format = Json.format[GetPersonResponseMessage]
+  implicit val format: Format[GetPersonResponseMessage] = Json.format
 }
 
 final case class GetPersonResponseMessage(id: UUID, name: String, age: Int)
 
 object TopicMessagePersonCreated {
-  implicit val format = Json.format[TopicMessagePersonCreated]
+  implicit val format: Format[TopicMessagePersonCreated] = Json.format
 }
 final case class TopicMessagePersonCreated(id: UUID, name: String, age: Int)
 
 object PersonApi {
   final val TopicName: String = "person-created"
+  final val Name = "person-api"
 }
 
 trait PersonApi extends Service {
@@ -53,7 +54,7 @@ trait PersonApi extends Service {
   def personCreatedTopic: Topic[TopicMessagePersonCreated]
 
   override def descriptor: Descriptor = {
-    named("person-api")
+    named(PersonApi.Name)
       .withCalls(
         // http :9000/api/person
         restCall(Method.GET, "/api/person/:id", getPerson _),

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.github.dnvriend.person
+package com.github.dnvriend.person.adapters.services
 
 import java.util.UUID
 
 import akka.NotUsed
+import com.github.dnvriend.person._
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.broker.TopicProducer

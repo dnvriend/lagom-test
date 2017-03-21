@@ -24,6 +24,7 @@ val akkaVersion = "2.4.17"
 val macwire: ModuleID = "com.softwaremill.macwire" %% "macros" % "2.3.0" % Provided
 val scalaTest: ModuleID = "org.scalatest" %% "scalatest" % "3.0.1" % Test
 val jwt: ModuleID = "com.jason-goodwin" %% "authentikat-jwt" % "0.4.1"
+val scalaz: ModuleID = "org.scalaz" %% "scalaz-core" % "7.2.10"
 
 val kafkaDeps: Seq[ModuleID] = Seq(
   "com.typesafe.akka" %% "akka-stream-kafka" % "0.14",
@@ -101,7 +102,7 @@ lazy val `person-impl` = (project in file("person-impl"))
     )
   )
   .settings(lagomForkedTestSettings: _*)
-  .dependsOn(`person-api`)
+  .dependsOn(`person-api`, `auth-lib`)
 
 lazy val `auth-lib` = (project in file("auth-lib"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -172,7 +173,7 @@ lazy val `play-service` = (project in file("play-service"))
   .settings(
     libraryDependencies ++= akkaHttpDeps,
     libraryDependencies += macwire,
-    libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.8",
+    libraryDependencies += scalaz,
     libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.10.0",
     libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided",
     libraryDependencies += "org.typelevel" %% "scalaz-scalatest" % "1.1.1" % Test,

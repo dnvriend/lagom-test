@@ -108,13 +108,24 @@ object ServerServiceCallTest {
     val notAuthServerServiceCall: ServerServiceCall[NotUsed, NotUsed] = ServerServiceCall { (requestHeader, _) =>
       Future.successful((ResponseHeader.Ok.withStatus(Status.UNAUTHORIZED), NotUsed))
     }
-    def getUserAsync(name: String): Future[Option[String]] = Future.successful(None)
+    def getUserFromRequest(req: RequestHeader): Option[String] = for {
+      p <- req.principal
+      user <- Option(p.getName)
+    } yield user
+
+    def getUserAsync(name: String): Future[Option[String]] = {
+      Future.successful(None)
+    }
+
+    // using a pattern called 'Monad Transformer' to deal with
+    // composing multiple effects, here the Future[Option]
     val result: Future[Option[String]] = (for {
-      user <- FutureOption(getUserAsync(""))
+      userName: String <- FutureOption(Future.successful(getUserFromRequest(requestHeader)))
+      user: String <- FutureOption(getUserAsync(userName))
     } yield user).future
 
     result.map { maybeUser =>
-      maybeUser.map(user => serviceCall7).getOrElse(notAuthServerServiceCall)
+      maybeUser.map(_ => serviceCall7).getOrElse(notAuthServerServiceCall)
     }
   }
 }

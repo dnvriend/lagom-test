@@ -24,5 +24,5 @@ import scala.concurrent.duration._
 
 class SimpleTestSpec extends FlatSpec with Matchers with OptionValues with ScalaFutures {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-  implicit val pc: PatienceConfig = PatienceConfig(timeout = 60.minutes, interval = 300.millis)
+  implicit val pc: PatienceConfig = PatienceConfig(timeout = 60.minutes, interval = 100.millis)
 }

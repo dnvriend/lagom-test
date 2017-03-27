@@ -20,10 +20,12 @@ import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.api.transport.{ RequestHeader, ResponseHeader }
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
+import play.api.http.Status
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
+// see: https://www.lagomframework.com/documentation/1.3.x/scala/ServiceImplementation.html#Handling-headers
 object ServerServiceCallTest {
   //
   // com.lightbend.lagom.scaladsl.api.transport
@@ -35,14 +37,15 @@ object ServerServiceCallTest {
   // val Default = RequestHeader(Method.GET, URI.create("/"), MessageProtocol.empty, Nil, None, Nil)
   //
 
-  // invoke()
-  // invoke(request: Request)
+  // ServiceCall has two invoke methods:
+  // 1. invoke(): takes no arguments and is only invoked when the payload is 'NotUsed'
+  // invoke(request: Request): invokes with the request payload (unmarshalled entity)
   val serviceCall: ServiceCall[NotUsed, String] = ServiceCall(_ => Future.successful("hello"))
   val serviceCall2: ServiceCall[String, String] = ServiceCall(msg => Future.successful(msg))
 
   // ServerServiceCall is a function from either:
   // 1. Payload => Future[Payload]
-  // 2. (RequestHeader, Payload) => (ResponseHeader, Payload)
+  // 2. (RequestHeader, Payload) => Future[(ResponseHeader, Payload)]
   val serviceCall3: ServerServiceCall[NotUsed, String] = ServerServiceCall { (requestHeader, request) =>
     Future.successful((ResponseHeader.Ok, "Hi there!"))
   }
@@ -51,7 +54,7 @@ object ServerServiceCallTest {
   val serviceCall4: ServerServiceCall[NotUsed, String] = ServerServiceCall { (requestHeader, request) =>
     serviceCall3.invokeWithHeaders(requestHeader, request).map {
       case (responseHeader, response) =>
-        val newResponseHeader = responseHeader.withStatus(321)
+        val newResponseHeader = responseHeader.withStatus(Status.USE_PROXY)
         (newResponseHeader, response.dropRight(1) + " foobar!")
     }
   }
@@ -72,6 +75,48 @@ object ServerServiceCallTest {
       serviceCall4.invokeWithHeaders(reqHeader, req)
     }
   }
+
+  // add an extra header to the response
+  val serviceCall7: ServerServiceCall[NotUsed, NotUsed] = ServerServiceCall { (requestHeader, payload) =>
+    serviceCall6.invokeWithHeaders(requestHeader, payload).map {
+      case (responseHeader, _) =>
+        (responseHeader.withHeader("MY_NEW_HEADER", "42").withStatus(Status.EXPECTATION_FAILED), payload)
+    }
+  }
+
+  // our FutureOption monad transformer
+  case class FutureOption[+A](future: Future[Option[A]]) extends AnyVal {
+    def map[B](f: A => B)(implicit ec: ExecutionContext): FutureOption[B] =
+      FutureOption(future.map(option => option.map(f)))
+    def flatMap[B](f: A => FutureOption[B])(implicit ec: ExecutionContext): FutureOption[B] = {
+      val flatMappedFuture = future.flatMap {
+        case Some(a) => f(a).future
+        case None    => Future.successful(None)
+      }
+      FutureOption(flatMappedFuture)
+    }
+
+    def filter(p: A => Boolean)(implicit ec: ExecutionContext): FutureOption[A] =
+      withFilter(p)
+
+    def withFilter(p: A => Boolean)(implicit ec: ExecutionContext): FutureOption[A] =
+      FutureOption(future.map(_.filter(p)))
+  }
+
+  // composeAsync is a function from RequestHeader => Future[ServerServiceCall]
+  val serviceCall8: ServerServiceCall[NotUsed, NotUsed] = ServerServiceCall.composeAsync { requestHeader =>
+    val notAuthServerServiceCall: ServerServiceCall[NotUsed, NotUsed] = ServerServiceCall { (requestHeader, _) =>
+      Future.successful((ResponseHeader.Ok.withStatus(Status.UNAUTHORIZED), NotUsed))
+    }
+    def getUserAsync(name: String): Future[Option[String]] = Future.successful(None)
+    val result: Future[Option[String]] = (for {
+      user <- FutureOption(getUserAsync(""))
+    } yield user).future
+
+    result.map { maybeUser =>
+      maybeUser.map(user => serviceCall7).getOrElse(notAuthServerServiceCall)
+    }
+  }
 }
 
 class ServerServiceCallTest extends SimpleTestSpec {
@@ -87,24 +132,37 @@ class ServerServiceCallTest extends SimpleTestSpec {
   it should "use a ServerServiceCall with RequestHeader and no payload" in {
     val (resp, body) = serviceCall3.invokeWithHeaders(RequestHeader.Default, NotUsed).futureValue
     body shouldBe "Hi there!"
-    resp.status shouldBe 200
+    resp.status shouldBe Status.OK
   }
 
   it should "serviceCall4: alter the response header" in {
     val (resp, body) = serviceCall4.invokeWithHeaders(RequestHeader.Default, NotUsed).futureValue
     body shouldBe "Hi there foobar!"
-    resp.status shouldBe 321
+    resp.status shouldBe Status.USE_PROXY
   }
 
   it should "serviceCall5: invoke another serverServiceCall by using compose" in {
     val (resp, body) = serviceCall5.invokeWithHeaders(RequestHeader.Default, NotUsed).futureValue
     body shouldBe "Hi there foobar!"
-    resp.status shouldBe 321
+    resp.status shouldBe Status.USE_PROXY
   }
 
   it should "serviceCall6: invoke another serverServiceCall by using compose with nested ServerServiceCall" in {
     val (resp, body) = serviceCall6.invokeWithHeaders(RequestHeader.Default, NotUsed).futureValue
     body shouldBe "Hi there foobar!"
-    resp.status shouldBe 321
+    resp.status shouldBe Status.USE_PROXY
+  }
+
+  it should "serviceCall7: add an extra header and alter the response status" in {
+    val (resp, body) = serviceCall7.invokeWithHeaders(RequestHeader.Default, NotUsed).futureValue
+    body shouldBe NotUsed
+    resp.status shouldBe Status.EXPECTATION_FAILED
+    resp.getHeader("MY_NEW_HEADER").value shouldBe "42"
+  }
+
+  it should "return an unauthorized without throwing Forbidden" in {
+    val (resp, body) = serviceCall8.invokeWithHeaders(RequestHeader.Default, NotUsed).futureValue
+    body shouldBe NotUsed
+    resp.status shouldBe Status.UNAUTHORIZED
   }
 }

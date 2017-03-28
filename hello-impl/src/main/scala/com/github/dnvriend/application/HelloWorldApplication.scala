@@ -22,8 +22,8 @@ import akka.util.Timeout
 import auth.{ Auth, AuthRepository }
 import cb.CircuitBreakerComponents
 import com.github.dnvriend.adapters.services.FooBarEntity.{ BarEventReceived, FooEventReceived }
-import com.github.dnvriend.adapters.services.{ CallHelloService, FooBarEntity, FooBarServiceImpl, HelloService }
-import com.github.dnvriend.api.{ CallHelloApi, FooBarService, HelloApi }
+import com.github.dnvriend.adapters.services.{ AclServiceImpl, CallHelloService, FooBarEntity, FooBarServiceImpl, HelloService }
+import com.github.dnvriend.api.{ AclService, CallHelloApi, FooBarService, HelloApi }
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
 import com.lightbend.lagom.scaladsl.playjson.{ JsonSerializer, JsonSerializerRegistry }
 import com.lightbend.lagom.scaladsl.server._
@@ -64,8 +64,9 @@ abstract class HelloWorldApplication(context: LagomApplicationContext) extends L
   override lazy val lagomServer: LagomServer = {
     LagomServer.forServices(
       bindService[HelloApi].to(wire[HelloService]),
-      bindService[CallHelloApi].to(wire[CallHelloService]),
-      bindService[FooBarService].to(wire[FooBarServiceImpl])
+      //      bindService[CallHelloApi].to(wire[CallHelloService]),
+      bindService[FooBarService].to(wire[FooBarServiceImpl]),
+      bindService[AclService].to(wire[AclServiceImpl])
     )
   }
 

@@ -16,11 +16,14 @@
 
 package com.github.dnvriend
 
-import com.github.dnvriend.api.HelloApi
+import com.github.dnvriend.api.{ AclService, CallHelloApi, HelloApi }
 import com.github.dnvriend.application.HelloWorldApplication
+import com.lightbend.lagom.scaladsl.api.Descriptor
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import com.typesafe.conductr.bundlelib.lagom.scaladsl.ConductRApplicationComponents
+
+import scala.collection.immutable
 
 class HelloWorldApplicationLoader extends LagomApplicationLoader {
   override def load(context: LagomApplicationContext) =
@@ -30,7 +33,12 @@ class HelloWorldApplicationLoader extends LagomApplicationLoader {
     new HelloWorldApplication(context) with LagomDevModeComponents
 
   // to let ConductR discover the Lagom service API
-  override def describeServices = List(
-    readDescriptor[HelloApi]
+  // A third method, describeServices, is optional, but may be used by tooling,
+  // for example by ConductR, to discover what service APIs are offered by this service.
+  // The meta data read from here may in turn be used to configure service gateways and other components.
+  override def describeServices: immutable.Seq[Descriptor] = List(
+    readDescriptor[HelloApi],
+    readDescriptor[AclService]
+  //    readDescriptor[CallHelloApi]
   )
 }
